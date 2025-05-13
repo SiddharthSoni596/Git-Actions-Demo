@@ -1,7 +1,7 @@
 import requests
 
 def fetch_github_status():
-    response = requests.get("https://api.githubstatus.com")
+    response = requests.get("https://google.com")
     if response.status_code == 200:
         print("GitHub status fetched successfully.")
     else:
