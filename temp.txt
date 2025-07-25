@@ -1,0 +1,68 @@
+Given the following:
+
+NLQ (Natural Language Question):
+{{NLQ}}
+
+SQL Query:
+{{SQL}}
+
+Tasks:
+1. Extract the following components from the SQL:
+   - tables: All table names used in the query (including CTEs).
+   - columns: All column names referenced (with aliases resolved).
+   - aggregations: Any aggregate functions (SUM, COUNT, AVG, etc.) and their associated columns.
+   - filters: All WHERE or HAVING conditions in plain English.
+   - joins: All join conditions.
+   - cte: Any Common Table Expressions (CTEs) with their role or purpose if identifiable.
+   - subqueries: Any nested SELECT statements with their role in the query.
+   - derived_columns: All derived columns including CASE statements, window functions, or calculated fields, along with:
+       * the alias name
+       * the original SQL expression
+       * a plain English explanation of what it represents.
+   - abbreviations: Expand common abbreviations in column names (e.g., txn_amt → Transaction Amount, cust_id → Customer ID).
+
+2. Link these elements to business meaning:
+   - For each metric or aggregation, explain its purpose in business terms.
+   - For each derived column, explain what it means and why it might matter to the business.
+   - For joins, describe the relationship in business terms (e.g., joining transactions with customers).
+   - For subqueries or CTEs, summarize their role (e.g., filtering inactive customers, pre-aggregating data).
+
+3. Provide a combined business-level interpretation:
+   - A short description of what this query does in business language.
+   - The business significance of the query result (why it matters).
+
+Output the result in this exact JSON schema:
+
+{
+  "business_description": "",
+  "business_significance": "",
+  "tables": [],
+  "columns": [],
+  "aggregations": [],
+  "filters": [],
+  "joins": [],
+  "cte": [
+    {
+      "name": "",
+      "purpose": "",
+      "query": ""
+    }
+  ],
+  "subqueries": [
+    {
+      "purpose": "",
+      "query": ""
+    }
+  ],
+  "derived_columns": [
+    {
+      "alias": "",
+      "expression": "",
+      "business_meaning": ""
+    }
+  ],
+  "abbreviation_expansion": {
+    "cust_id": "Customer ID",
+    "txn_amt": "Transaction Amount"
+  }
+}
