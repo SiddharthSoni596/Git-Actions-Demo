@@ -77,3 +77,21 @@ Rules:
 - Expand abbreviations in column names where possible.
 - Provide detailed and precise output in valid JSON format only.
 - Do not omit any relevant detail.
+
+
+############################################
+Analyze the following pair:
+
+NLQ:
+{{NLQ}}
+
+SQL:
+{{SQL}}
+
+Tasks:
+1. Extract SQL components: tables, columns, aggregations, filters, joins, CTEs, subqueries, derived columns, abbreviations.
+2. Derive intent_from_nlq: A single sentence summarizing the intent of the NLQ.
+3. Generate business_description: What the query accomplishes in business terms, incorporating NLQ intent and SQL logic.
+4. Generate business_significance: Why this query matters for business decision-making (use NLQ hints like time range, customer segment, metric).
+5. Expand abbreviations where possible.
+6. Return strictly in JSON format using the schema provided below.
