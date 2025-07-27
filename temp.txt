@@ -96,6 +96,64 @@ Tasks:
 5. Expand abbreviations where possible.
 6. Return strictly in JSON format using the schema provided below.
 
+#################################################################
+
+You are a SQL structure extraction engine. Analyze the given SQL query and extract the following in valid JSON:
+
+- tables: list all base tables used.
+- columns: list all columns with their source table if identifiable.
+- joins: list all join conditions in the format {left, right}.
+- filters: list all WHERE and HAVING conditions as strings.
+- ctes: list of {name, query, output_columns}.
+- subqueries: list of {context (e.g., filter, select), query}.
+- metrics: list of {alias, expression, aggregation_type}.
+- abbreviations: list of short column names or underscored terms.
+
+Rules:
+- Do not guess business meaning.
+- Do not expand abbreviations.
+- Preserve query hierarchy.
+- Output valid JSON only.
+
+SQL:
+{SQL_QUERY}
+################################################################
+You are a SQL lineage resolver. Given the SQL query and structured metadata, trace all aliases and metrics to their base columns. Provide the result as JSON with these keys:
+
+- metrics: list of {alias, expression, aggregation_type (if any), base_columns: [table.column...], lineage_chain: alias → expression → base column mapping}.
+- derived_columns: list of {alias, expression, depends_on: [aliases or columns]}.
+- alias_lineage: map of alias → original table.column or expression.
+
+Rules:
+- Do not infer business meaning.
+- If something cannot be resolved, use null.
+- Return valid JSON only.
+
+Input:
+SQL: {SQL_QUERY}
+Structured Metadata: {Stage_1A_Output}
+
+############################################################################################################################
+
+You are enriching SQL metadata with business context. Use the inputs to produce a JSON object with the following keys:
+
+- intent_from_nlq: a concise description of what the user wants.
+- business_description: summary of what the query is doing in business terms.
+- business_significance: why this query matters to the business.
+- metrics: list of metrics with {alias, business_meaning}.
+- abbreviation_expansions: a map of {abbreviation: full form} using the provided glossary. If unknown, mark 'unresolved'.
+
+Inputs:
+1. NLQ: {NLQ}
+2. SQL Metadata: {Stage_1_Output}
+3. Glossary: {Glossary Terms}
+
+Rules:
+- Only use glossary terms for expansions.
+- Do not hallucinate meanings not in the glossary.
+- Return valid JSON only.
+############################################################################################################################
+
 ##############################################
 You are an expert SQL and business metadata extraction engine.
 Your task is to analyze a pair of:
