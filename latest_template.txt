@@ -1,0 +1,151 @@
+Stage 1A Prompt – SQL Structure Extraction
+
+You are a SQL structural analysis engine. Your task is to extract structured metadata from the given SQL query.
+Return the result as valid JSON in the following format:
+
+{
+  "tables": [ "table_name" ],
+  "columns": [ { "name": "column_name", "table": "table_name" } ],
+  "joins": [ { "left": "alias_or_table.column", "right": "alias_or_table.column" } ],
+  "filters": [ "filter_condition" ],
+  "ctes": [
+    {
+      "name": "cte_name",
+      "query": "full_cte_query_text",
+      "output_columns": [ "column1", "column2" ],
+      "details": {
+        "tables": [ "table_name" ],
+        "joins": [ { "left": "alias_or_table.column", "right": "alias_or_table.column" } ],
+        "filters": [ "filter_condition" ],
+        "aggregations": [
+          { "alias": "alias_name", "expression": "expression_text", "aggregation_type": "SUM/AVG/etc or null" }
+        ]
+      }
+    }
+  ],
+  "subqueries": [
+    {
+      "context": "where_used (SELECT/WHERE/HAVING)",
+      "query": "subquery_text",
+      "details": {
+        "tables": [ "table_name" ],
+        "joins": [ { "left": "...", "right": "..." } ],
+        "filters": [ "filter_condition" ],
+        "aggregations": [
+          { "alias": "alias_name", "expression": "expression_text", "aggregation_type": "SUM/AVG/etc or null" }
+        ]
+      }
+    }
+  ],
+  "metrics": [
+    { "alias": "alias_name", "expression": "expression_text", "aggregation_type": "SUM/AVG/etc or null" }
+  ],
+  "abbreviations": [ "short_term", "another_short_term" ]
+}
+
+Rules:
+- Do not guess business meanings.
+- Do not expand abbreviations.
+- Preserve hierarchy of CTEs and subqueries.
+- Include all aliases and derived columns.
+- Return only valid JSON.
+
+SQL Query:
+{{SQL_QUERY}}
+
+✅ Updated Stage 1B Prompt for Dynamic Depth
+
+You are a SQL lineage resolver. Your task is to generate lineage for metrics and derived columns by tracing dependencies recursively until reaching base physical columns (table.column).
+The depth can be unlimited; continue until all references resolve to their original source columns.
+
+Return valid JSON in the following format:
+
+{
+  "metrics": [
+    {
+      "alias": "alias_name",
+      "expression": "expression_in_select",
+      "aggregation_type": "SUM/AVG/etc or null",
+      "lineage_steps": [
+        {"level": 1, "from": "alias_name", "to": "expression_or_parent_alias"},
+        {"level": 2, "from": "expression_or_parent_alias", "to": "its_dependency"},
+        ...
+        {"level": N, "from": "previous_dependency", "to": "table.column"}
+      ]
+    }
+  ],
+  "derived_columns": [
+    {
+      "alias": "alias_name",
+      "expression": "expression_text",
+      "depends_on": [ "list_of_dependencies (aliases or columns)" ]
+    }
+  ],
+  "alias_lineage": {
+    "alias": "resolved_original_source (table.column or expression)"
+  }
+}
+
+Rules:
+- Do not limit the number of lineage steps. Expand recursively until all columns resolve to base table columns.
+- If multiple dependencies exist (e.g., CASE WHEN), include separate steps for each.
+- Preserve order from alias → derived expression → base column.
+- Do not guess business meaning.
+- Output valid JSON only.
+
+Inputs:
+SQL Query: {{SQL_QUERY}}
+Structured Metadata from Stage 1A: {{STAGE_1A_OUTPUT}}
+
+
+✅ Stage 2 Prompt – Business Context Enrichment
+csharp
+Copy
+Edit
+You are an expert in business analytics and data engineering. Your task is to enrich SQL metadata with business context using:
+1. Natural Language Question (NLQ)
+2. SQL Metadata (from Stage 1A and Stage 1B)
+3. Business Glossary (if provided)
+
+Return the result as valid JSON in the following format:
+
+{
+  "intent_from_nlq": "short summary of the user's question",
+  "business_description": "what the SQL query achieves in business terms",
+  "business_significance": "why this query is important for business decisions",
+  "metrics": [
+    {
+      "alias": "alias_name",
+      "technical_expression": "expression_text",
+      "business_meaning": "human-friendly interpretation",
+      "related_columns": ["table.column"]
+    }
+  ],
+  "abbreviation_expansions": {
+    "short_term": "full_form_or_unresolved"
+  },
+  "lineage_with_business_meaning": [
+    {
+      "alias": "alias_name",
+      "lineage_steps": [
+        {
+          "from": "technical_name",
+          "to": "technical_expression",
+          "business_context": "mapped meaning from glossary or NLQ if available"
+        }
+      ]
+    }
+  ]
+}
+
+Rules:
+- Use glossary terms to expand abbreviations; if not found, mark as "unresolved".
+- Derive business_description and business_significance based on NLQ and metrics.
+- Do not invent meanings if NLQ and glossary provide no clue; return "unresolved".
+- For lineage_with_business_meaning, add business context for each step where possible.
+- Ensure JSON output is valid and complete.
+
+Inputs:
+NLQ: {{NLQ}}
+SQL Metadata: {{SQL_METADATA_FROM_STAGE_1}}
+Glossary: {{BUSINESS_GLOSSARY_IF_AVAILABLE}}
