@@ -1,0 +1,45 @@
+4. Schema Linking Algorithm (Section 3)
+Goal: Identify subset of columns most relevant to the question.
+
+Steps:
+Extract
+
+Keywords and literals from the question
+
+Build Focused Schema
+
+Use FAISS → find top-k semantically similar columns
+
+Use LSH → add columns that contain literals
+
+Prepare Schema Variants
+
+(a) Focused schema + minimal profile
+
+(b) Focused schema + maximal profile
+
+(c) Full schema + minimal profile
+
+(d) Full schema + maximal profile
+
+(e) Focused schema + full profile
+
+Generate SQL via LLM
+
+For each schema variant, prompt LLM to generate SQL
+
+Extract fields and literals used
+
+Literal Correction
+
+If a literal is not matched to correct column:
+
+Find correct column via LSH
+
+Augment schema
+
+Ask LLM to revise SQL
+
+Aggregate Results
+
+Union all fields from all attempts → final linked schema
