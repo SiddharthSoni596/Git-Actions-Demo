@@ -1,0 +1,118 @@
+# src/summarization/summarizer.py
+from typing import Dict, List
+from .llm_client import LLMClient
+from .prompt_templates import SHORT_SUMMARY_PROMPT, LONG_SUMMARY_PROMPT
+
+class ColumnSummarizer:
+    def __init__(self, llm_client: LLMClient):
+        self.llm = llm_client
+
+    def generate_mechanical_summary(self, profile: Dict) -> str:
+        col_name = profile["column_name"]
+        stats = profile.get("stats", {})
+        top_values = profile.get("top_k_values", [])
+        num_nulls = stats.get("null_count", 0)
+        distinct = stats.get("distinct_count", "unknown")
+
+        summary = (
+            f"Column {col_name} has {num_nulls} NULL values. "
+            f"There are {distinct} distinct values. "
+        )
+        if "min" in stats and "max" in stats:
+            summary += f"Range: '{stats['min']}' to '{stats['max']}'. "
+        if top_values:
+            summary += f"Common values: {', '.join(map(str, top_values[:5]))}."
+        return summary
+
+    def generate_short_summary(self, mechanical_summary: str) -> str:
+        prompt = SHORT_SUMMARY_PROMPT.format(profile=mechanical_summary)
+        return self.llm.generate(prompt)
+
+
+# src/summarization/prompt_templates.py
+
+SHORT_SUMMARY_PROMPT = """
+You are an expert data analyst. Summarize the following column profile into ONE short sentence
+that describes the column's meaning and format in plain English.
+
+Profile:
+{profile}
+
+Short summary:
+"""
+
+LONG_SUMMARY_PROMPT = """
+You are an expert data analyst. Summarize the following column profile into a detailed description
+that includes the meaning, format, and examples of values.
+
+Profile:
+{profile}
+
+Long summary:
+"""
+
+
+# src/summarization/llm_client.py
+import os
+import openai
+
+class LLMClient:
+    def __init__(self, model="gpt-4o-mini", temperature=0.2):
+        openai.api_key = os.getenv("OPENAI_API_KEY")
+        self.model = model
+        self.temperature = temperature
+
+    def generate(self, prompt: str) -> str:
+        response = openai.ChatCompletion.create(
+            model=self.model,
+            messages=[
+                {"role": "system", "content": "You are a helpful assistant for data profiling."},
+                {"role": "user", "content": prompt},
+            ],
+            temperature=self.temperature
+        )
+        return response["choices"][0]["message"]["content"].strip()
+
+from summarization.summarizer import ColumnSummarizer
+from summarization.llm_client import LLMClient
+
+# Load profiles from previous step (Section 2.0)
+profiles = [
+    {
+        "column_name": "CDSCode",
+        "table_name": "frpm",
+        "stats": {
+            "null_count": 0,
+            "distinct_count": 9986,
+            "min": "01100170109835",
+            "max": "58727695838305"
+        },
+        "top_k_values": ["01100170109835", "01100170112607", "01100170118489"]
+    }
+]
+
+llm_client = LLMClient()
+summarizer = ColumnSummarizer(llm_client)
+enriched_profiles = summarizer.summarize_all(profiles)
+
+print(enriched_profiles)
+
+
+    def generate_long_summary(self, mechanical_summary: str) -> str:
+        prompt = LONG_SUMMARY_PROMPT.format(profile=mechanical_summary)
+        return self.llm.generate(prompt)
+
+    def summarize_all(self, profiles: List[Dict]) -> List[Dict]:
+        enriched_profiles = []
+        for profile in profiles:
+            mechanical_summary = self.generate_mechanical_summary(profile)
+            short_summary = self.generate_short_summary(mechanical_summary)
+            long_summary = self.generate_long_summary(mechanical_summary)
+
+            profile.update({
+                "mechanical_summary": mechanical_summary,
+                "short_summary": short_summary,
+                "long_summary": long_summary
+            })
+            enriched_profiles.append(profile)
+        return enriched_profiles
