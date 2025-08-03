@@ -43,3 +43,25 @@ Ask LLM to revise SQL
 Aggregate Results
 
 Union all fields from all attempts → final linked schema
+
+
+
+SHORT_DESC_PROMPT = """
+You are given the following information about a database column:
+- Mechanical Profile (important): {mechanical_summary}
+- Column Name: {column_name}
+- Column Description (if any): {column_desc}
+- Table Name: {table_name}
+- Other Columns: {other_columns}
+
+Task:
+Generate a short description (max 25 words) that combines BOTH:
+1. The purpose or meaning of the column (semantic meaning).
+2. Any important patterns from the mechanical profile (e.g., numeric length, uniqueness).
+
+Example:
+Mechanical Profile: Column UserID has 0 NULL values, 100 distinct values, values are 10-digit numeric strings.
+Expected Short Description: "Stores unique 10-digit numeric user identifiers."
+
+Now write the short description:
+"""
