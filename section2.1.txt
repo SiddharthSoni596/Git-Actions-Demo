@@ -153,3 +153,63 @@ class MechanicalSummaryGenerator:
 
         return " ".join(description)
 
+
+import os
+import json
+from summarizer.mechanical_summary import MechanicalSummaryGenerator
+from summarizer.llm_summary import LLMSummaryGenerator
+
+class TableSummaryProcessor:
+    def __init__(self, profiles_dir, model="gpt-4o"):
+        self.profiles_dir = profiles_dir
+        self.mech_gen = MechanicalSummaryGenerator()
+        self.llm_gen = LLMSummaryGenerator(model=model)
+
+    def process_table(self, table_name):
+        table_path = os.path.join(self.profiles_dir, table_name)
+        if not os.path.exists(table_path):
+            raise FileNotFoundError(f"Table folder not found: {table_path}")
+
+        all_cols = [f.replace(".json", "") for f in os.listdir(table_path) if f.endswith(".json")]
+
+        for filename in os.listdir(table_path):
+            if not filename.endswith(".json"):
+                continue
+
+            col_path = os.path.join(table_path, filename)
+            with open(col_path, "r") as f:
+                profile = json.load(f)
+
+            # Step 1: Mechanical description
+            mechanical_desc = self.mech_gen.generate_mechanical_summary(profile)
+
+            # Step 2: LLM short & long descriptions
+            short_desc = self.llm_gen.generate_short_description(
+                col_name=profile.get("column_name", filename.replace(".json", "")),
+                table_name=table_name,
+                mechanical_desc=mechanical_desc,
+                other_cols=[c for c in all_cols if c != filename.replace(".json", "")]
+            )
+            long_desc = self.llm_gen.generate_long_description(mechanical_desc)
+
+            # Update JSON profile
+            profile["mechanical_desc"] = mechanical_desc
+            profile["short_desc"] = short_desc
+            profile["long_desc"] = long_desc
+
+            with open(col_path, "w") as f:
+                json.dump(profile, f, indent=4)
+
+            print(f"✅ Processed column: {filename}")
+
+    def process_all_tables(self):
+        for table_name in os.listdir(self.profiles_dir):
+            table_path = os.path.join(self.profiles_dir, table_name)
+            if os.path.isdir(table_path):
+                print(f"Processing table: {table_name}")
+                self.process_table(table_name)
+
+if __name__ == "__main__":
+    processor = TableSummaryProcessor(profiles_dir="profiles", model="gpt-4o")
+    processor.process_all_tables()
+
