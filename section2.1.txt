@@ -116,3 +116,40 @@ print(enriched_profiles)
             })
             enriched_profiles.append(profile)
         return enriched_profiles
+
+class MechanicalSummaryGenerator:
+    def __init__(self):
+        pass
+
+    def generate_mechanical_summary(self, profile: dict) -> str:
+        """
+        Generate an English description of a column profile.
+        :param profile: Dictionary with stats for a column
+        :return: Mechanical English description string
+        """
+
+        col_name = profile.get("column_name")
+        null_count = profile.get("null_count", 0)
+        total_count = profile.get("total_count", 0)
+        distinct_count = profile.get("distinct_count", 0)
+        min_val = profile.get("min_val", "")
+        max_val = profile.get("max_val", "")
+        top_values = profile.get("top_values", [])
+        avg_length = profile.get("avg_length", None)
+
+        description = []
+        description.append(f"Column {col_name} has {null_count} NULL values out of {total_count} records.")
+        description.append(f"There are {distinct_count} distinct values.")
+
+        if min_val and max_val:
+            description.append(f"The minimum value is '{min_val}' and the maximum value is '{max_val}'.")
+
+        if top_values:
+            top_list = ", ".join([f"'{v}'" for v in top_values[:10]])  # top 10
+            description.append(f"Most common non-NULL column values are {top_list}.")
+
+        if avg_length:
+            description.append(f"The average value length is {avg_length} characters.")
+
+        return " ".join(description)
+
