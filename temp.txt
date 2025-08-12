@@ -268,3 +268,45 @@ Edit
     ]
   }
 ]
+
+#########################################################
+
+Task:
+You are given a query structure extracted from SQL.
+Your goal is to identify only meaningful business terms, aliases, metrics, and derived columns that should be stored in metadata enrichment for LLM guidance.
+These terms must have clear semantic or calculated meaning — avoid trivial or raw columns.
+
+Rules for Identifying Business Terms
+Ignore any column that:
+
+Is a plain base column directly selected without alias or transformation.
+
+Is a simple aggregate without alias, e.g., COUNT(*), SUM(amount), AVG(sales) unless the alias provides business meaning (total_orders, average_order_value).
+
+Is a primary key or join key without transformation or alias.
+
+Comes directly from a base table without computation.
+
+Include a column if:
+
+It has an alias (AS something) indicating a renamed or business-specific meaning.
+
+It is computed using arithmetic, string operations, date functions, CASE expressions, or any transformation logic.
+
+It is the result of an aggregate function with a meaningful alias.
+
+It is derived in a CTE or subquery that changes its meaning or granularity.
+
+Recursive Lineage Tracing:
+
+If the derived column/alias is computed in a subquery/CTE, trace all the source columns and tables recursively until reaching base table columns.
+
+Include every table and column in the lineage, even if they span multiple nested queries.
+
+Preserve the transformation logic if available.
+
+Special Handling:
+
+For calculated ratios, percentages, or KPIs, preserve the full expression in the output.
+
+If multiple source columns/tables contribute to a metric, list them all in source_columns and source_tables.
