@@ -238,3 +238,33 @@ Output only valid JSON in the following structure:
     }
   ]
 }
+
+Rules:
+
+Recursion rule: If a derived column comes from another derived column, repeat the lookup process until only base columns remain.
+
+Table alias resolution: Always report the fully resolved table name, not its alias.
+
+Expression sources: Include every contributing base table/column in the lineage, even if the expression is an aggregate, CASE, or nested function.
+
+No duplication: If a table/column pair appears multiple times, keep only one entry in the final lineage for that term.
+
+Meaning preservation: Keep the expression exactly as in the original query structure for business context.
+
+Output Schema (JSON array):
+
+json
+Copy
+Edit
+[
+  {
+    "term": "string - alias/metric/business term",
+    "expression": "string - SQL expression used to calculate it",
+    "base_lineage": [
+      {
+        "table": "string - resolved base table name",
+        "column": "string - base physical column name"
+      }
+    ]
+  }
+]
